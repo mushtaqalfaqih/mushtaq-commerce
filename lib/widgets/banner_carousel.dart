@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 
 class BannerCarousel extends StatefulWidget {
   final List<String> bannerImages;
+  final void Function(int index)? onBannerTap;
 
   const BannerCarousel({
     super.key,
     required this.bannerImages,
+    this.onBannerTap,
   });
 
   @override
@@ -66,10 +68,13 @@ class _BannerCarouselState extends State<BannerCarousel> {
                   });
                 },
                 itemBuilder: (context, index) {
-                  return Image.asset(
-                    widget.bannerImages[index],
-                    fit: BoxFit.cover,
-                    width: double.infinity,
+                  return GestureDetector(
+                    onTap: () => widget.onBannerTap?.call(index),
+                    child: Image.asset(
+                      widget.bannerImages[index],
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                    ),
                   );
                 },
               ),

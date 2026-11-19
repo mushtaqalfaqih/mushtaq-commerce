@@ -5,6 +5,7 @@ import 'package:bazaary_app/models/cart_item.dart';
 import 'package:bazaary_app/models/product.dart';
 import 'package:bazaary_app/screens/cart_screen.dart';
 import 'package:bazaary_app/screens/categories_screen.dart';
+import 'package:bazaary_app/screens/influencer_store_screen.dart';
 import 'package:bazaary_app/screens/offers_screen.dart';
 import 'package:bazaary_app/screens/profile_screen.dart';
 import 'package:bazaary_app/screens/wishlist_screen.dart';
@@ -164,6 +165,54 @@ class _HomeScreenState extends State<HomeScreen> {
           cat.contains(normalizedQuery) ||
           desc.contains(normalizedQuery);
     }).toList();
+  }
+
+  void _openMushtaqStore() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => InfluencerStoreScreen(
+          influencerName: 'مشتاق الفقية',
+          bannerImage: 'images/catcot1.jpg',
+          promoCode: 'MUSHTAQ15',
+          bio:
+              'مرحباً بكم في متجري الخاص على سوق بازاري! اخترت لكم هذه المنتجات الإلكترونية والذكية بعناية فائقة وضمان الجودة، مع خصم 15% حصري لمتابعيّ.',
+          products: mockProducts
+              .where((p) =>
+                  p.category.contains('موبايل') ||
+                  p.category.contains('التلفاز') ||
+                  p.category.contains('جديدة'))
+              .toList(),
+          onAddToCart: _addToCart,
+          favoriteIds: _favoriteIds,
+          onToggleFavorite: _toggleFavorite,
+        ),
+      ),
+    );
+  }
+
+  void _openHananStore() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => InfluencerStoreScreen(
+          influencerName: 'حنان فازع',
+          bannerImage: 'images/catcot.jpg',
+          promoCode: 'HANAN15',
+          bio:
+              'أهلاً بجميع المتابعين الأعزاء! يسرني أن أشارككم خياراتي المفضلة للأجهزة المنزلية وأدوات المطبخ وباكجات التوفير لتجربة راقية وموفرة.',
+          products: mockProducts
+              .where((p) =>
+                  p.category.contains('المنزل') ||
+                  p.category.contains('باكجات') ||
+                  p.category.contains('تقسيط'))
+              .toList(),
+          onAddToCart: _addToCart,
+          favoriteIds: _favoriteIds,
+          onToggleFavorite: _toggleFavorite,
+        ),
+      ),
+    );
   }
 
   void _openWishlistScreen() {
@@ -340,12 +389,25 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         const SizedBox(height: 22),
 
-        // 1. سلايدر البانرات المتحرك تلقائياً
-        const BannerCarousel(
-          bannerImages: [
+        // 1. سلايدر البانرات المتحرك تلقائياً (4 عروض وبانرات)
+        BannerCarousel(
+          bannerImages: const [
             'images/panar_main1.jpg',
             'images/panar_main2.jpg',
+            'images/catcot1.jpg',
+            'images/catcot.jpg',
           ],
+          onBannerTap: (index) {
+            if (index == 2) {
+              _openMushtaqStore();
+            } else if (index == 3) {
+              _openHananStore();
+            } else if (index == 1) {
+              _openMushtaqStore();
+            } else {
+              setState(() => _currentIndex = 2);
+            }
+          },
         ),
 
         const SizedBox(height: 20),
@@ -444,7 +506,12 @@ class _HomeScreenState extends State<HomeScreen> {
         // 4. بطاقات المؤثرين: مشتاق الفقية وحنان فازع جنباً إلى جنب
         _buildSectionHeader('مؤثرو سوق بازاري'),
         const SizedBox(height: 12),
-        _buildDoubleBanner('images/catcot1.jpg', 'images/catcot.jpg'),
+        _buildDoubleBanner(
+          'images/catcot1.jpg',
+          'images/catcot.jpg',
+          onTapLeft: _openMushtaqStore,
+          onTapRight: _openHananStore,
+        ),
 
         const SizedBox(height: 28),
 
@@ -527,27 +594,38 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildDoubleBanner(String leftImage, String rightImage) {
+  Widget _buildDoubleBanner(
+    String leftImage,
+    String rightImage, {
+    VoidCallback? onTapLeft,
+    VoidCallback? onTapRight,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Row(
         children: [
           Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Image.asset(
-                leftImage,
-                fit: BoxFit.cover,
+            child: GestureDetector(
+              onTap: onTapLeft,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.asset(
+                  leftImage,
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Image.asset(
-                rightImage,
-                fit: BoxFit.cover,
+            child: GestureDetector(
+              onTap: onTapRight,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.asset(
+                  rightImage,
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
           ),
