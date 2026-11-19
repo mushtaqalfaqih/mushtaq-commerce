@@ -4,11 +4,13 @@ import 'package:flutter/material.dart';
 class ProductDetailsScreen extends StatefulWidget {
   final Product product;
   final VoidCallback onAddToCart;
+  final String? heroTag;
 
   const ProductDetailsScreen({
     super.key,
     required this.product,
     required this.onAddToCart,
+    this.heroTag,
   });
 
   @override
@@ -21,6 +23,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     final product = widget.product;
+    final activeHeroTag = widget.heroTag ?? 'product_image_${product.id}';
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -81,14 +84,14 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // صورة المنتج الكبيرة
+              // صورة المنتج الكبيرة مع Hero Animation
               Container(
                 color: Colors.white,
                 padding: const EdgeInsets.all(24),
                 height: 280,
                 child: Center(
                   child: Hero(
-                    tag: 'product_${product.id}',
+                    tag: activeHeroTag,
                     child: Image.asset(
                       product.imagePath,
                       fit: BoxFit.contain,
@@ -202,7 +205,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                         ),
                         const Spacer(),
                         const Icon(Icons.verified,
-                          color: Colors.green, size: 18),
+                            color: Colors.green, size: 18),
                         const SizedBox(width: 4),
                         const Text(
                           'منتج أصلي 100%',
@@ -223,7 +226,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               // مميزات الشراء والتوصيل
               Container(
                 color: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Column(
                   children: [
                     _buildFeatureItem(
@@ -294,14 +298,14 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           ),
           child: Row(
             children: [
-              // زر إضافة إلى السلة
               Expanded(
                 child: ElevatedButton.icon(
                   onPressed: () {
                     widget.onAddToCart();
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('تمت إضافة "${product.title}" إلى السلة!'),
+                        content:
+                            Text('تمت إضافة "${product.title}" إلى السلة!'),
                         duration: const Duration(seconds: 2),
                         action: SnackBarAction(
                           label: 'عرض السلة',
