@@ -7,6 +7,8 @@ import 'package:bazaary_app/screens/cart_screen.dart';
 import 'package:bazaary_app/screens/categories_screen.dart';
 import 'package:bazaary_app/screens/offers_screen.dart';
 import 'package:bazaary_app/screens/profile_screen.dart';
+import 'package:bazaary_app/widgets/banner_carousel.dart';
+import 'package:bazaary_app/widgets/flash_sale_section.dart';
 import 'package:bazaary_app/widgets/product_card.dart';
 import 'package:flutter/material.dart';
 
@@ -43,6 +45,14 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 4; // الافتراضي: الرئيسية (أقصى اليمين)
   final List<CartItem> _cartItems = [];
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   void _addToCart(Product product) {
     setState(() {
@@ -105,6 +115,17 @@ class _HomeScreenState extends State<HomeScreen> {
   int get _totalCartCount =>
       _cartItems.fold(0, (sum, item) => sum + item.quantity);
 
+  List<Product> get _filteredProducts {
+    if (_searchQuery.isEmpty) return mockProducts;
+    return mockProducts.where((p) {
+      final titleMatch =
+          p.title.toLowerCase().contains(_searchQuery.toLowerCase());
+      final catMatch =
+          p.category.toLowerCase().contains(_searchQuery.toLowerCase());
+      return titleMatch || catMatch;
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -152,169 +173,253 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildHomeContent() {
     return Column(
       children: [
-        const HomeHeader(),
+        HomeHeader(
+          searchController: _searchController,
+          onSearchChanged: (val) {
+            setState(() {
+              _searchQuery = val.trim();
+            });
+          },
+        ),
         Expanded(
           child: SingleChildScrollView(
+            child: _searchQuery.isNotEmpty
+                ? _buildSearchResults()
+                : _buildFullHomeBody(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSearchResults() {
+    final results = _filteredProducts;
+
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            textDirection: TextDirection.rtl,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'نتائج البحث عن: "$_searchQuery"',
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF4A148C),
+                ),
+              ),
+              Text(
+                '(${results.length} منتج)',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (results.isEmpty)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 48),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.search_off,
+                      size: 64,
+                      color: Colors.grey.shade400,
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'لا توجد منتجات مطابقة للبحث',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'جرّب كتابة كلمة أخرى مثل "موبايل" أو "تلفزيون"',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: results.length,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 14,
+                childAspectRatio: 0.68,
+              ),
+              itemBuilder: (context, index) {
+                final product = results[index];
+                return ProductCard(
+                  product: product,
+                  onAddToCart: () => _addToCart(product),
+                );
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFullHomeBody() {
+    return Column(
+      children: [
+        const SizedBox(height: 22),
+
+        // 1. سلايدر البانرات المتحرك تلقائياً
+        const BannerCarousel(
+          bannerImages: [
+            'images/panar_main1.jpg',
+            'images/panar_main2.jpg',
+          ],
+        ),
+
+        const SizedBox(height: 20),
+
+        // 2. عنوان تسوق حسب الفئة + صفين أفقيين للفئات
+        _buildSectionHeader('تسوق حسب الفئة', onSeeAll: () {
+          setState(() => _currentIndex = 3);
+        }),
+
+        const SizedBox(height: 14),
+
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Column(
               children: [
-                const SizedBox(height: 25),
-
-                // البانر الإعلاني الأول
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: Image.asset(
-                      'images/panar_main1.jpg',
-                      fit: BoxFit.cover,
-                      width: double.infinity,
+                // الصف الأول للفئات
+                Row(
+                  textDirection: TextDirection.rtl,
+                  children: [
+                    _buildCategoryItem(
+                      'اشتري بالتقسيط',
+                      'images/cat_1.jpg',
                     ),
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                // عنوان تسوق حسب الفئة
-                _buildSectionHeader('تسوق حسب الفئة', onSeeAll: () {
-                  setState(() => _currentIndex = 3);
-                }),
-
-                const SizedBox(height: 14),
-
-                // قائمة الفئات الأفقية
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Column(
-                      children: [
-                        // الصف الأول للفئات
-                        Row(
-                          textDirection: TextDirection.rtl,
-                          children: [
-                            _buildCategoryItem(
-                              'اشتري بالتقسيط',
-                              'images/cat_1.jpg',
-                            ),
-                            const SizedBox(width: 12),
-                            _buildCategoryItem(
-                              'منتجات مختارة',
-                              'images/cat_2.jpg',
-                            ),
-                            const SizedBox(width: 12),
-                            _buildCategoryItem(
-                              'باكجات التوفير',
-                              'images/cat_3.png',
-                            ),
-                            const SizedBox(width: 12),
-                            _buildCategoryItem(
-                              'منتجات جديدة',
-                              'images/cat_new.png',
-                            ),
-                            const SizedBox(width: 12),
-                            _buildCategoryItem(
-                              'مشتاق',
-                              'images/mo22.png',
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        // الصف الثاني للفئات
-                        Row(
-                          textDirection: TextDirection.rtl,
-                          children: [
-                            _buildCategoryItem(
-                              'الإلكترونيات وأجهزة المنزل',
-                              'images/Elctron_home_Tool.png',
-                            ),
-                            const SizedBox(width: 12),
-                            _buildCategoryItem(
-                              'منتجات المؤثرين',
-                              'images/mo2.png',
-                            ),
-                            const SizedBox(width: 12),
-                            _buildCategoryItem(
-                              'التلفاز وملحقاته',
-                              'images/talphaz.png',
-                            ),
-                            const SizedBox(width: 12),
-                            _buildCategoryItem(
-                              'موبايل و أجهزة',
-                              'images/phon.png',
-                            ),
-                            const SizedBox(width: 12),
-                            _buildCategoryItem(
-                              'مشتاق',
-                              'images/mo22.png',
-                            ),
-                          ],
-                        ),
-                      ],
+                    const SizedBox(width: 12),
+                    _buildCategoryItem(
+                      'منتجات مختارة',
+                      'images/cat_2.jpg',
                     ),
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                // البانر الإعلاني الثاني
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: Image.asset(
-                      'images/panar_main2.jpg',
-                      fit: BoxFit.cover,
-                      width: double.infinity,
+                    const SizedBox(width: 12),
+                    _buildCategoryItem(
+                      'باكجات التوفير',
+                      'images/cat_3.png',
                     ),
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // بطاقات المؤثرين: مشتاق الفقية وحنان فازع جنباً إلى جنب
-                _buildSectionHeader('مؤثرو سوق بازاري'),
-                const SizedBox(height: 12),
-                _buildDoubleBanner('images/catcot1.jpg', 'images/catcot.jpg'),
-
-                const SizedBox(height: 28),
-
-                // قسم المنتجات المقترحة والتخفيضات (شبكة المنتجات التفاعلية)
-                _buildSectionHeader(
-                  'أحدث المنتجات والعروض',
-                  onSeeAll: () {
-                    setState(() => _currentIndex = 2);
-                  },
-                ),
-                const SizedBox(height: 14),
-
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: mockProducts.length,
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 14,
-                      childAspectRatio: 0.68,
+                    const SizedBox(width: 12),
+                    _buildCategoryItem(
+                      'منتجات جديدة',
+                      'images/cat_new.png',
                     ),
-                    itemBuilder: (context, index) {
-                      final product = mockProducts[index];
-                      return ProductCard(
-                        product: product,
-                        onAddToCart: () => _addToCart(product),
-                      );
-                    },
-                  ),
+                    const SizedBox(width: 12),
+                    _buildCategoryItem(
+                      'مشتاق',
+                      'images/mo22.png',
+                    ),
+                  ],
                 ),
-
-                const SizedBox(height: 30),
+                const SizedBox(height: 16),
+                // الصف الثاني للفئات
+                Row(
+                  textDirection: TextDirection.rtl,
+                  children: [
+                    _buildCategoryItem(
+                      'الإلكترونيات وأجهزة المنزل',
+                      'images/Elctron_home_Tool.png',
+                    ),
+                    const SizedBox(width: 12),
+                    _buildCategoryItem(
+                      'منتجات المؤثرين',
+                      'images/mo2.png',
+                    ),
+                    const SizedBox(width: 12),
+                    _buildCategoryItem(
+                      'التلفاز وملحقاته',
+                      'images/talphaz.png',
+                    ),
+                    const SizedBox(width: 12),
+                    _buildCategoryItem(
+                      'موبايل و أجهزة',
+                      'images/phon.png',
+                    ),
+                    const SizedBox(width: 12),
+                    _buildCategoryItem(
+                      'مشتاق',
+                      'images/mo22.png',
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
         ),
+
+        const SizedBox(height: 24),
+
+        // 3. عروض الفلاش العاجلة مع عداد الوقت الحي
+        FlashSaleSection(
+          deals: mockProducts,
+          onAddToCart: _addToCart,
+        ),
+
+        const SizedBox(height: 24),
+
+        // 4. بطاقات المؤثرين: مشتاق الفقية وحنان فازع جنباً إلى جنب
+        _buildSectionHeader('مؤثرو سوق بازاري'),
+        const SizedBox(height: 12),
+        _buildDoubleBanner('images/catcot1.jpg', 'images/catcot.jpg'),
+
+        const SizedBox(height: 28),
+
+        // 5. قسم المنتجات المقترحة والتخفيضات (شبكة المنتجات)
+        _buildSectionHeader(
+          'أحدث المنتجات والعروض',
+          onSeeAll: () {
+            setState(() => _currentIndex = 2);
+          },
+        ),
+        const SizedBox(height: 14),
+
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: mockProducts.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 14,
+              childAspectRatio: 0.68,
+            ),
+            itemBuilder: (context, index) {
+              final product = mockProducts[index];
+              return ProductCard(
+                product: product,
+                onAddToCart: () => _addToCart(product),
+              );
+            },
+          ),
+        ),
+
+        const SizedBox(height: 30),
       ],
     );
   }

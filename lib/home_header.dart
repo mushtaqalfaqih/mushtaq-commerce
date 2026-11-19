@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 
 class HomeHeader extends StatelessWidget {
-  const HomeHeader({super.key});
+  final ValueChanged<String>? onSearchChanged;
+  final TextEditingController? searchController;
+
+  const HomeHeader({
+    super.key,
+    this.onSearchChanged,
+    this.searchController,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -123,7 +130,7 @@ class HomeHeader extends StatelessWidget {
             child: Container(
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: BorderRadius.circular(8),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.1),
@@ -132,17 +139,29 @@ class HomeHeader extends StatelessWidget {
                   ),
                 ],
               ),
-              child: const TextField(
+              child: TextField(
+                controller: searchController,
+                onChanged: onSearchChanged,
                 textAlign: TextAlign.right,
                 decoration: InputDecoration(
-                  hintText: 'ابحث الان في منتجات سوق بازاري',
-                  hintStyle: TextStyle(
-                    color: Color.fromARGB(255, 17, 13, 219),
+                  hintText: 'ابحث الان في منتجات سوق بازاري...',
+                  hintStyle: const TextStyle(
+                    color: Color(0xFF673AB7),
                     fontSize: 13,
                   ),
-                  suffixIcon: Icon(Icons.search, color: Colors.grey),
+                  suffixIcon: const Icon(Icons.search, color: Color(0xFF673AB7)),
+                  prefixIcon: (searchController != null &&
+                          searchController!.text.isNotEmpty)
+                      ? IconButton(
+                          icon: const Icon(Icons.clear, size: 18, color: Colors.grey),
+                          onPressed: () {
+                            searchController!.clear();
+                            if (onSearchChanged != null) onSearchChanged!('');
+                          },
+                        )
+                      : null,
                   border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(vertical: 15),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 14),
                 ),
               ),
             ),
