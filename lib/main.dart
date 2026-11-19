@@ -7,6 +7,8 @@ import 'package:bazaary_app/screens/cart_screen.dart';
 import 'package:bazaary_app/screens/categories_screen.dart';
 import 'package:bazaary_app/screens/offers_screen.dart';
 import 'package:bazaary_app/screens/profile_screen.dart';
+import 'package:bazaary_app/screens/wishlist_screen.dart';
+import 'package:bazaary_app/widgets/add_to_cart_bottom_sheet.dart';
 import 'package:bazaary_app/widgets/banner_carousel.dart';
 import 'package:bazaary_app/widgets/flash_sale_section.dart';
 import 'package:bazaary_app/widgets/product_card.dart';
@@ -45,6 +47,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 4; // الافتراضي: الرئيسية (أقصى اليمين)
   final List<CartItem> _cartItems = [];
+  final Set<String> _favoriteIds = {'p1', 'p2'}; // عنصرين افتراضيين للمفضلة
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
@@ -65,21 +68,40 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     });
 
+    // إظهار النافذة المنزلقة السفلية المخصصة (Custom Bottom Sheet)
+    showAddToCartBottomSheet(
+      context: context,
+      product: product,
+      totalCartCount: _totalCartCount,
+      totalCartPrice: _totalCartPrice,
+      onGoToCart: () {
+        setState(() {
+          _currentIndex = 1;
+        });
+      },
+    );
+  }
+
+  void _toggleFavorite(Product product) {
+    final isFav = _favoriteIds.contains(product.id);
+    setState(() {
+      if (isFav) {
+        _favoriteIds.remove(product.id);
+      } else {
+        _favoriteIds.add(product.id);
+      }
+    });
+
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('تمت إضافة "${product.title}" إلى السلة'),
-        duration: const Duration(seconds: 2),
-        backgroundColor: const Color(0xFF673AB7),
-        action: SnackBarAction(
-          label: 'عرض السلة',
-          textColor: Colors.amber,
-          onPressed: () {
-            setState(() {
-              _currentIndex = 1;
-            });
-          },
+        content: Text(
+          !isFav
+              ? 'تمت إضافة "${product.title}" إلى المفضلة ❤️'
+              : 'تمت إزالة "${product.title}" من المفضلة',
         ),
+        duration: const Duration(seconds: 1),
+        backgroundColor: !isFav ? Colors.redAccent : Colors.grey.shade800,
       ),
     );
   }
@@ -115,15 +137,46 @@ class _HomeScreenState extends State<HomeScreen> {
   int get _totalCartCount =>
       _cartItems.fold(0, (sum, item) => sum + item.quantity);
 
+  double get _totalCartPrice =>
+      _cartItems.fold(0, (sum, item) => sum + item.totalPrice);
+
+  List<Product> get _favoriteProducts =>
+      mockProducts.where((p) => _favoriteIds.contains(p.id)).toList();
+
+  String _normalizeArabic(String text) {
+    return text
+        .toLowerCase()
+        .replaceAll(RegExp(r'[أإآ]'), 'ا')
+        .replaceAll('ة', 'ه')
+        .replaceAll('ى', 'ي')
+        .trim();
+  }
+
   List<Product> get _filteredProducts {
     if (_searchQuery.isEmpty) return mockProducts;
+    final normalizedQuery = _normalizeArabic(_searchQuery);
+
     return mockProducts.where((p) {
-      final titleMatch =
-          p.title.toLowerCase().contains(_searchQuery.toLowerCase());
-      final catMatch =
-          p.category.toLowerCase().contains(_searchQuery.toLowerCase());
-      return titleMatch || catMatch;
+      final title = _normalizeArabic(p.title);
+      final cat = _normalizeArabic(p.category);
+      final desc = _normalizeArabic(p.description);
+      return title.contains(normalizedQuery) ||
+          cat.contains(normalizedQuery) ||
+          desc.contains(normalizedQuery);
     }).toList();
+  }
+
+  void _openWishlistScreen() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => WishlistScreen(
+          favoriteProducts: _favoriteProducts,
+          onToggleFavorite: _toggleFavorite,
+          onAddToCart: _addToCart,
+        ),
+      ),
+    );
   }
 
   @override
@@ -164,7 +217,10 @@ class _HomeScreenState extends State<HomeScreen> {
           },
         );
       case 0:
-        return const ProfileScreen();
+        return ProfileScreen(
+          wishlistCount: _favoriteIds.length,
+          onOpenWishlist: _openWishlistScreen,
+        );
       default:
         return _buildHomeContent();
     }
@@ -243,7 +299,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'جرّب كتابة كلمة أخرى مثل "موبايل" أو "تلفزيون"',
+                      'جرّب كتابة كلمة أخرى مثل "موبايل" أو "تلفزيون" أو "خلاط"',
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey.shade600,
@@ -268,6 +324,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 final product = results[index];
                 return ProductCard(
                   product: product,
+                  isFavorite: _favoriteIds.contains(product.id),
+                  onToggleFavorite: () => _toggleFavorite(product),
                   onAddToCart: () => _addToCart(product),
                 );
               },
@@ -376,6 +434,8 @@ class _HomeScreenState extends State<HomeScreen> {
         // 3. عروض الفلاش العاجلة مع عداد الوقت الحي
         FlashSaleSection(
           deals: mockProducts,
+          favoriteIds: _favoriteIds,
+          onToggleFavorite: _toggleFavorite,
           onAddToCart: _addToCart,
         ),
 
@@ -413,6 +473,8 @@ class _HomeScreenState extends State<HomeScreen> {
               final product = mockProducts[index];
               return ProductCard(
                 product: product,
+                isFavorite: _favoriteIds.contains(product.id),
+                onToggleFavorite: () => _toggleFavorite(product),
                 onAddToCart: () => _addToCart(product),
               );
             },

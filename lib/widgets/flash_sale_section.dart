@@ -6,11 +6,15 @@ import 'package:flutter/material.dart';
 class FlashSaleSection extends StatefulWidget {
   final List<Product> deals;
   final Function(Product) onAddToCart;
+  final Set<String>? favoriteIds;
+  final Function(Product)? onToggleFavorite;
 
   const FlashSaleSection({
     super.key,
     required this.deals,
     required this.onAddToCart,
+    this.favoriteIds,
+    this.onToggleFavorite,
   });
 
   @override
@@ -149,6 +153,10 @@ class _FlashSaleSectionState extends State<FlashSaleSection> {
                         product: product,
                         onAddToCart: () => widget.onAddToCart(product),
                         heroTag: heroTag,
+                        isFavorite:
+                            widget.favoriteIds?.contains(product.id) ?? false,
+                        onToggleFavorite: () =>
+                            widget.onToggleFavorite?.call(product),
                       ),
                     ),
                   );

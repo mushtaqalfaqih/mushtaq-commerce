@@ -6,12 +6,16 @@ class ProductCard extends StatefulWidget {
   final Product product;
   final VoidCallback onAddToCart;
   final String? heroTag;
+  final bool isFavorite;
+  final VoidCallback? onToggleFavorite;
 
   const ProductCard({
     super.key,
     required this.product,
     required this.onAddToCart,
     this.heroTag,
+    this.isFavorite = false,
+    this.onToggleFavorite,
   });
 
   @override
@@ -38,6 +42,8 @@ class _ProductCardState extends State<ProductCard> {
               product: product,
               onAddToCart: widget.onAddToCart,
               heroTag: activeHeroTag,
+              isFavorite: widget.isFavorite,
+              onToggleFavorite: widget.onToggleFavorite,
             ),
           ),
         );
@@ -61,7 +67,7 @@ class _ProductCardState extends State<ProductCard> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // صورة المنتج مع شارة الخصم و Hero Animation
+              // صورة المنتج مع شارة الخصم و Hero Animation وزر المفضلة
               Expanded(
                 child: Stack(
                   children: [
@@ -83,6 +89,7 @@ class _ProductCardState extends State<ProductCard> {
                         ),
                       ),
                     ),
+                    // شارة الخصم
                     if (product.hasDiscount)
                       Positioned(
                         top: 12,
@@ -106,6 +113,35 @@ class _ProductCardState extends State<ProductCard> {
                           ),
                         ),
                       ),
+                    // زر المفضلة الصغير
+                    Positioned(
+                      top: 10,
+                      left: 10,
+                      child: InkWell(
+                        onTap: widget.onToggleFavorite,
+                        borderRadius: BorderRadius.circular(20),
+                        child: Container(
+                          padding: const EdgeInsets.all(5),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.9),
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.08),
+                                blurRadius: 4,
+                              ),
+                            ],
+                          ),
+                          child: Icon(
+                            widget.isFavorite
+                                ? Icons.favorite
+                                : Icons.favorite_border,
+                            color: widget.isFavorite ? Colors.red : Colors.grey,
+                            size: 17,
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),

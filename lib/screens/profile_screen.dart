@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 
 class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
+  final int wishlistCount;
+  final VoidCallback? onOpenWishlist;
+
+  const ProfileScreen({
+    super.key,
+    this.wishlistCount = 0,
+    this.onOpenWishlist,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -142,10 +149,14 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: _buildQuickAction(
-                    Icons.favorite_border,
-                    'المفضلة',
-                    '5 عناصر',
+                  child: InkWell(
+                    onTap: onOpenWishlist,
+                    borderRadius: BorderRadius.circular(12),
+                    child: _buildQuickAction(
+                      Icons.favorite_border,
+                      'المفضلة',
+                      '$wishlistCount عناصر',
+                    ),
                   ),
                 ),
               ],

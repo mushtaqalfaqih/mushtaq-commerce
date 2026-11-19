@@ -5,12 +5,16 @@ class ProductDetailsScreen extends StatefulWidget {
   final Product product;
   final VoidCallback onAddToCart;
   final String? heroTag;
+  final bool isFavorite;
+  final VoidCallback? onToggleFavorite;
 
   const ProductDetailsScreen({
     super.key,
     required this.product,
     required this.onAddToCart,
     this.heroTag,
+    this.isFavorite = false,
+    this.onToggleFavorite,
   });
 
   @override
@@ -18,7 +22,13 @@ class ProductDetailsScreen extends StatefulWidget {
 }
 
 class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
-  bool _isFavorite = false;
+  late bool _isFavorite;
+
+  @override
+  void initState() {
+    super.initState();
+    _isFavorite = widget.isFavorite;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,12 +65,15 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                 setState(() {
                   _isFavorite = !_isFavorite;
                 });
+                if (widget.onToggleFavorite != null) {
+                  widget.onToggleFavorite!();
+                }
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
                       _isFavorite
-                          ? 'تمت إضافة المنتج إلى المفضلة'
-                          : 'تمت إزالة المنتج من المفضلة',
+                          ? 'تمت إضافة "${product.title}" إلى المفضلة'
+                          : 'تمت إزالة "${product.title}" من المفضلة',
                     ),
                     duration: const Duration(seconds: 1),
                   ),
@@ -302,20 +315,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                 child: ElevatedButton.icon(
                   onPressed: () {
                     widget.onAddToCart();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content:
-                            Text('تمت إضافة "${product.title}" إلى السلة!'),
-                        duration: const Duration(seconds: 2),
-                        action: SnackBarAction(
-                          label: 'عرض السلة',
-                          textColor: Colors.amber,
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
-                        ),
-                      ),
-                    );
                   },
                   icon: const Icon(Icons.shopping_cart_outlined),
                   label: const Text(
